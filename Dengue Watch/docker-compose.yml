@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Main Full-Stack Application Service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: denguewatch-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - CACHE_TYPE=redis
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=sqlite:////app/denguewatch.db
+    volumes:
+      - denguewatch-data:/app
+    depends_on:
+      - redis
+    networks:
+      - denguewatch-net
+
+  # High-Performance Caching Layer
+  redis:
+    image: redis:7-alpine
+    container_name: denguewatch-cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    networks:
+      - denguewatch-net
+
+networks:
+  denguewatch-net:
+    driver: bridge
+
+volumes:
+  denguewatch-data:
+  redis-data:
